@@ -16,10 +16,10 @@ public class SingleFactHandler {
     double factScore = 0;
 
     /* Constructor with inputs provided */
-    public SingleFactHandler(String a, String b, String c) {
-        factSubject = a;
-        factCategory = b;
-        factObject = c;
+    public SingleFactHandler(String subject, String category, String object) {
+        factSubject = subject;
+        factCategory = category;
+        factObject = object;
     }
 
 
@@ -39,7 +39,10 @@ public class SingleFactHandler {
     /*Function to check the status of given fact */
     public double factCheck()  {
         factScore = 0;
-        factScore = CorpusHandler.checkFact(factSubject, factCategory, factObject);
+        if(!((factSubject=="!!")||(factCategory=="!!")))
+        {
+            factScore = CorpusHandler.checkFact(factSubject, factCategory, factObject);
+        }
         return factScore;
     }
 

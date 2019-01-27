@@ -1,8 +1,8 @@
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 
 import org.apache.commons.io.*;
+
 import java.util.*;
 
 public class Main {
@@ -10,32 +10,47 @@ public class Main {
     static List<String> resultListFormatted = new ArrayList<String>();
 
     public static void main(String[] args) throws Exception {
-        CorpusHandler corpus = new CorpusHandler();
-        List<String> incorrectFactList = new ArrayList<>();
+        CorpusHandler.initalize();
+        CategoryHandler.initialize();
 
-        CorpusHandler.initialiseCorpus();
+
+        List<String> incorrectFactList = new ArrayList<>();
 
         int factCount = 0, incorrectFacts = 0;
 
-        System.out.println("Processing input file..");
-        File myFile = new File("train.tsv");
-        LineIterator myIterator = FileUtils.lineIterator(myFile, "UTF-8");
+        /****Test and Train Usecases - true for training; false for testing****/
+        boolean isTrainingFile = true;
 
-        /*Check if file is a training file (TRUE) or testing file (FALSE) */
-        boolean isTrainingFile = CheckFileType(myFile);
+        String input_filename = new String();
+        String result_filename = new String();
 
-        if (isTrainingFile) {
-            System.out.println("File identified as training file");
+        if (isTrainingFile == true) {
+            input_filename = "train.tsv";
+            result_filename = "results_train.ttl";
+        } else {
+            input_filename = "test.tsv";
+            result_filename = "results.ttl";
         }
 
-        while (myIterator.hasNext()) {
-            String mySentence = myIterator.next();
+        System.out.println("Processing input file...");
+        File myFile = new File(input_filename);
+        if (!myFile.exists()) {
+            System.out.println("File does not exists. Check filename!");
+        } else {
+            LineIterator myIterator = FileUtils.lineIterator(myFile, "UTF-8");
 
-            /* Ignore empty sentences in the input files */
-            if (!mySentence.isEmpty()) {
+            if (isTrainingFile) {
+                System.out.println("File identified as training file");
+            }
 
-                List<String> myFactList = Arrays.asList(mySentence.split("\t"));
-                SingleFactHandler singleFact;
+            while (myIterator.hasNext()) {
+                String mySentence = myIterator.next();
+
+                /* Ignore empty sentences in the input files */
+                if (!mySentence.isEmpty()) {
+
+                    List<String> myFactList = Arrays.asList(mySentence.split("\t"));
+                    SingleFactHandler singleFact;
 
                 /*
                  Expected inputs formats
@@ -43,63 +58,63 @@ public class Main {
                  FactId -- Fact Statement (Test document)
                  */
 
-                if ((myFactList.get(0).matches("[0-9]+") && myFactList.size() > 1)) {
+                    if ((myFactList.get(0).matches("[0-9]+") && myFactList.size() > 1)) {
 
-                    double factScore;
-                    singleFact = PreprocessSentence(myFactList.get(1));
-                    factScore = singleFact.factCheck();
+                        double factScore;
+                        System.out.println("Checking " + mySentence);
+                        singleFact = preprocessSentence(myFactList.get(1));
+                        factScore = singleFact.factCheck();
 
-                    if (isTrainingFile == true) {
-                        factCount++;
-                        if ((factScore * 1.0) != Double.parseDouble(myFactList.get(2))) {
-                            incorrectFacts++;
-                            incorrectFactList.add(mySentence);
+                        if (isTrainingFile == true) {
+                            factCount++;
+                            if ((((factScore * 1.0) == 1) && (Double.parseDouble(myFactList.get(2)) == 0)) ||
+                                    (((factScore * 1.0) != 1.0) && (Double.parseDouble(myFactList.get(2)) == 1))) {
+                                incorrectFacts++;
+                                incorrectFactList.add(mySentence);
 
-                            /*Todo: Print the facts identified as wrong */
-                            System.out.println("Wrong fact" + mySentence);
+                                /*Print the facts identified as wrong */
+                                System.out.println("\t\t\t Learned Score:" + factScore + "<<<----------");
+                            }
+
                         }
 
+                        addToResultList(myFactList.get(0), factScore);
                     }
-
-                    AddToResultList(myFactList.get(0), factScore);
                 }
+
             }
 
+            CorpusHandler.writeCorpus();
+            System.out.println("\nCreating output file...");
+            createOutputFile(result_filename);
+            System.out.println("\nDone!");
         }
-
-        CorpusHandler.writeCorpus();
-
-        CreateOutputFile();
-        System.out.println("Done!");
-    } 
+    }
 
 
-    /**
-     *
+    /*
      * Function to add the facts into the
      * resultListFormatted List<String>
      */
 
-    static void AddToResultList(String factid, Double factScore) {
+    static void addToResultList(String factid, Double factScore) {
 
         String outputString = "<http://swc2017.aksw.org/task2/dataset/" + factid + "><http://swc2017.aksw.org/hasTruthValue>\"" + factScore.toString() + "\"^^<http://www.w3.org/2001/XMLSchema#double> .";
         resultListFormatted.add(outputString);
     }
 
 
-    /**
+    /*
      * Function to create output file based on the results
      * added into the ArrayList resultListFormatted
      */
 
-    static void CreateOutputFile() throws Exception {
+    static void createOutputFile(String resultFile) throws Exception {
 
-    	System.out.println("Creating output file..");
         Iterator myIterator = resultListFormatted.iterator();
-        FileWriter myFilewriter = new FileWriter("result_train.ttl");
+        FileWriter myFilewriter = new FileWriter(resultFile, false);
 
-        while(myIterator.hasNext())
-        {
+        while (myIterator.hasNext()) {
             myFilewriter.write(myIterator.next().toString());
             myFilewriter.write("\n");
         }
@@ -107,33 +122,30 @@ public class Main {
 
     }
 
-    /**
+    /*
      * Function to  format the input sentence mySentence into a
      * standard form, considering the structure of the sentence.
      */
 
-    static SingleFactHandler PreprocessSentence(String mySentence) {
+    static SingleFactHandler preprocessSentence(String mySentence) {
 
         mySentence = mySentence.replace("s'", "s's").replaceAll(".$", "");
 
-        HashMap<String, HashMap<String, String>> myCategoryDefinition = CategorizeSentence(mySentence);
+        HashMap<String, String> myCategoryHash = categorizeSentence(mySentence);
 
-        String myCategory, mySplitWord, myReplaceWord = new String();
-        String myFirstPart = new String();
-        String mySecondPart = new String();
+        String mySplitWord = new String("!!");
+        String myFirstPart = new String("!!");
+        String mySecondPart = new String("!!");
 
-        /*TODO Check category definition again*/
-        myCategory = myCategoryDefinition.keySet().iterator().next();
+        String myCategory = myCategoryHash.keySet().iterator().next();
+        String myCatchWord = new String();
 
-        if (myCategory != "!!") {
+        if (myCategoryHash.keySet().iterator().next() != "!!") {
 
-            HashMap<String, String> myCategoryInstance = (myCategoryDefinition.get(myCategory));
-
-            myReplaceWord = myCategoryInstance.keySet().iterator().next();
-            mySplitWord = myCategoryInstance.get(myReplaceWord);
+            myCatchWord = myCategoryHash.get(myCategory);
+            mySplitWord = CategoryHandler.getSplitWord(myCatchWord);
 
             List<String> mySplitText = Arrays.asList(mySentence.split(" " + mySplitWord + " "));
-
 
             if (mySplitText.get(0).contains("'s")) {
                 myFirstPart = mySplitText.get(0);
@@ -148,74 +160,46 @@ public class Main {
 
             }
 
-            //*TODO: Replace world to be checked  */
-            myFirstPart = myFirstPart.replaceAll(" " + myReplaceWord, "").replaceAll("'s", "");
-            mySecondPart = mySecondPart.replaceAll(" " + myReplaceWord, "");
+            myFirstPart = myFirstPart.replaceAll(" " + myCatchWord, "").replaceAll("'s", "");
+            mySecondPart = mySecondPart.replaceAll(" " + myCatchWord, "");
 
         }
 
+        //   System.out.println(myFirstPart + myCategory + mySecondPart);
         return new SingleFactHandler(myFirstPart, myCategory, mySecondPart);
     }
 
-    /**
+    /*
      * Function to categorize the given input sentence
      * sentence based on the objects already defined in categoryDefinition
      */
 
-    public static HashMap<String, HashMap<String, String>> CategorizeSentence(String mySentence) {
+    public static HashMap<String, String> categorizeSentence(String mySentence) {
 
         String myCategory = new String();
-        String mySplitWord = new String();
-        String myReplaceWorld = new String();
+        String myCatchWord = new String();
 
         Boolean foundflag = new Boolean(false);
 
-        for (String outerIterator : CorpusHandler.categoryDefinition.keySet()) {
-            HashMap<String, String> innerVariable = CorpusHandler.categoryDefinition.get(outerIterator);
+        List<String> catchWords = CategoryHandler.getCatchwordList();
 
-            for (String innerIterator : innerVariable.keySet()) {
-
-                if (mySentence.contains(innerIterator)) {
-                    myCategory = outerIterator;
-                    myReplaceWorld = innerIterator;
-                    mySplitWord = innerVariable.get(innerIterator);
-                    foundflag = true;
-                    break;
-                }
-
-            }
-            if (foundflag == true) {
+        for (String eachString : catchWords) {
+            if (mySentence.contains(eachString)) {
+                myCategory = CategoryHandler.getCategoryName(eachString);
+                foundflag = true;
+                myCatchWord = eachString;
                 break;
             }
         }
 
-
         if (foundflag == false) {
             myCategory = "!!";
-            myReplaceWorld = null;
-            mySplitWord = "is";
         }
 
+        HashMap<String, String> myReturn = new HashMap<>();
+        myReturn.put(myCategory, myCatchWord);
 
-        HashMap<String, HashMap<String, String>> myReturnData = new HashMap<>();
-        HashMap<String, String> myInnerReturnData = new HashMap<>();
-
-        myInnerReturnData.put(myReplaceWorld, mySplitWord);
-        myReturnData.put(myCategory, myInnerReturnData);
-
-        return myReturnData;
+        return myReturn;
     }
 
-    /**
-     * Function to find out the type of the input file.
-     * This is used to handle the two different use cases of test file and train file reading
-     */
-    static boolean CheckFileType(File filename) throws Exception {
-        LineIterator myIterator = FileUtils.lineIterator(filename, "UTF-8");
-        if (myIterator.next().split("/t").length > 2) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 }

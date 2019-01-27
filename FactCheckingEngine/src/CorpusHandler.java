@@ -2,158 +2,91 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Class to handle the corpus storage with the basic functions of fact checking
- * based on the available corpus.
+ * Class to handle the corpus storage with the basic functions
+ * of fact checking based on the available corpus.
  */
 
 public class CorpusHandler {
 
-	public static HashMap<String, HashMap<String, List<String>>> corpus = new HashMap<>();
-	public static HashMap<String, HashMap<String, String>> categoryDefinition = new HashMap<>();
+    public static HashMap<String, HashMap<String, List<String>>> corpus = new HashMap<>();
 
-	public CorpusHandler() {
-		initialiseCorpus();
-		initalizeCategories();
-	}
+    /* Function initalize the corpus i.e read corpus from the stored file if file is present*/
+    public static void initalize() {
+        try {
+            File myFile = new File("corpus.txt");
+            FileInputStream myFileInputStream = new FileInputStream(myFile);
+            ObjectInputStream myObjectInputStream = new ObjectInputStream(myFileInputStream);
+            corpus = (HashMap<String, HashMap<String, List<String>>>) myObjectInputStream.readObject();
+            myObjectInputStream.close();
+        } catch (Exception e) {
+            System.out.println("Corpus file cannot be read");
+        }
+    }
 
-	static boolean containSubject(String mySubject) {
-		if (corpus.containsKey(mySubject)) {
-			return true;
-		}
-		return false;
-	}
+    /* Function to check if the data for given subject is already extracted */
+    static boolean containSubject(String mySubject) {
+        if (corpus.containsKey(mySubject)) {
+            return true;
+        }
+        return false;
+    }
 
-	public static double checkFact(String mySubject, String myClassification, String myFact) {
-		double factScore = 0;
+    /* Function to check the fact score of the given fact */
+    public static double checkFact(String mySubject, String myClassification, String myFact) {
+        double factScore = 0;
 
-		if (containSubject(mySubject) == false) {
-			CorpusBuilder newSubject = new CorpusBuilder(mySubject);
-		}
+        if (containSubject(mySubject) == false) {
+            CorpusBuilder newSubject = new CorpusBuilder(mySubject);
+        }
 
-		if (corpus.containsKey(mySubject)) {
-			HashMap<String, List<String>> subjectFactMap = corpus.get(mySubject);
-			List<String> subjectFactList = new ArrayList<>();
-			if (subjectFactMap.containsKey(myClassification)) {
-				subjectFactList = subjectFactMap.get(myClassification);
-			}
-			factScore = compareContents(myFact, subjectFactList);
-		} else {
-			factScore = 0;
-		}
 
-		return factScore;
-	}
+        if (corpus.containsKey(mySubject)) {
+            HashMap<String, List<String>> subjectFactMap = corpus.get(mySubject);
 
-	static double compareContents(String fact, List<String> factList) {
-		double score = -1.0;
+            List<String> subjectFactList = new ArrayList<>();
+            if (subjectFactMap.containsKey(myClassification)) {
+                subjectFactList = subjectFactMap.get(myClassification);
+            }
+            factScore = compareContents(myFact, subjectFactList);
+        } else {
+            factScore = 0;
+        }
 
-		for (String factFromList : factList) {
+        return factScore;
+    }
 
-			if (factList.contains(fact)) {
-				score = 1.0;
-			} else {
-				String baseFact = fact.replaceAll("[.,]", "");
-				String baseFactList = factFromList.replaceAll("[.,]", "");
-				if (baseFactList.contains(baseFact)) {
-					score = 1.0;
-				}
-			}
-		}
+    /* Function to compare the contents of the given fact with the factlist extracted from Wikipedia */
+    static double compareContents(String fact, List<String> factList) {
+        double score = -1.0;
 
-		return score;
-	}
+        for (String factFromList : factList) {
 
-	public static void writeCorpus() {
+            if (factList.contains(fact)) {
+                score = 1.0;
+            } else {
+                String baseFact = fact.replaceAll("[.,]", "");
+                String baseFactList = factFromList.replaceAll("[.,]", "");
+                if (baseFactList.contains(baseFact)) {
+                    score = 1.0;
+                }
+            }
+        }
 
-		try {
-			File file = new File("corpus.txt");
-			FileOutputStream f = new FileOutputStream(file);
-			ObjectOutputStream s = new ObjectOutputStream(f);
-			s.writeObject(corpus);
-			s.close();
-		} catch (Exception e) {
-			System.out.println("Corpus file cannot be written");
-		}
-	}
+        return score;
+    }
 
-	public static void initialiseCorpus() {
-		try {
-			File myFile = new File("corpus.txt");
-			if(myFile.exists()) {
-				FileInputStream myFileInputStream = new FileInputStream(myFile);
-				ObjectInputStream myObjectInputStream = new ObjectInputStream(myFileInputStream);
-				corpus = (HashMap<String, HashMap<String, List<String>>>) myObjectInputStream.readObject();
-				myObjectInputStream.close();
-			}
-		} catch (Exception e) {
-			System.out.println("Corpus file cannot be read");
-		}
-	}
+    /* Function to write the corpus hashmap to a file for storage after program run */
+    public static void writeCorpus() {
 
-	public static void initalizeCategories() {
-		HashMap<String, String> myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("birth place", "is");
-		myCategoryDefinition.put("nascence place", "is");
-		categoryDefinition.put("born", myCategoryDefinition);
+        try {
+            File myFile = new File("corpus.txt");
+            FileOutputStream myFileOutputStream = new FileOutputStream(myFile, false);
+            ObjectOutputStream myObjectOutputStream = new ObjectOutputStream(myFileOutputStream);
+            myObjectOutputStream.writeObject(corpus);
+            myObjectOutputStream.close();
+        } catch (Exception e) {
+            System.out.println("Corpus file could not be written");
+        }
 
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("last place", "is");
-		myCategoryDefinition.put("death place", "is");
-		categoryDefinition.put("died", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("author", "is");
-		categoryDefinition.put("author", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("spouse", "is");
-		categoryDefinition.put("spouse", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("subordinate", "is");
-		myCategoryDefinition.put("subsidiary", "is");
-		categoryDefinition.put("subsidiaries", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("award", "is");
-		myCategoryDefinition.put("honour", "is");
-		categoryDefinition.put("awards", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("team", "is");
-		myCategoryDefinition.put("squad", "is");
-		categoryDefinition.put("team", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("stars", "stars");
-		myCategoryDefinition.put("cast", "is");
-		categoryDefinition.put("starring", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("office", "is");
-		myCategoryDefinition.put("role", "is");
-		myCategoryDefinition.put("President", "is");
-		myCategoryDefinition.put("Prime Minister", "is");
-		categoryDefinition.put("office", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("foundation place", "is");
-		categoryDefinition.put("Founded", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("office", "is");
-		myCategoryDefinition.put("role", "is");
-		myCategoryDefinition.put("president", "is");
-		myCategoryDefinition.put("primeminister", "is");
-		categoryDefinition.put("President", myCategoryDefinition);
-
-		myCategoryDefinition = new HashMap<>();
-		myCategoryDefinition.put("office", "is");
-		myCategoryDefinition.put("role", "is");
-		myCategoryDefinition.put("president", "is");
-		myCategoryDefinition.put("primeminister", "is");
-		categoryDefinition.put("Primeminister", myCategoryDefinition);
-
-	}
-
+    }
 }
