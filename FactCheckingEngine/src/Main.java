@@ -19,7 +19,7 @@ public class Main {
         int factCount = 0, incorrectFacts = 0;
 
         /****Test and Train Usecases - true for training; false for testing****/
-        boolean isTrainingFile = true;
+        boolean isTrainingFile = false;
 
         String input_filename = new String();
         String result_filename = new String();
