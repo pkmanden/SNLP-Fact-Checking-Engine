@@ -27,7 +27,50 @@ Since with each fact more and more Wikipedia infoboxes are extracted and this in
 # Executing the Project
 Run as a simple Java project by running the Main file.
 Input file format should be as  
-FactID	Fact_Statement  
+    FactID	Fact_Statement  
 Result file of the test.tsv file will be updated in the results.ttl file.  
 
-**Note** : Set the variable isTrainingFile in Main.java to “true” or “false” to make the system read data from “train.tsv” or “test.tsv” respectively. By default, the value is set to “false” and the system will output the results of the “test.tsv” file.
+**Note** : Set the variable isTrainingFile in Main.java to “true” to make the system read data from “train.tsv”.  By default, the value is set to “false” and the system will output the results of the “test.tsv” file.  
+
+
+#### Correct facts the system cannot handle
+1.	Microsoft’s subsidiary is Citus Data.  
+(Wikipedia does not list all the subsidiaries of Microsoft in the infobox)
+
+2.	Shahrukh Khan’s birth place is New Delhi.  
+(Wikipedia article for ‘Shahrukh Khan’ redirects to ‘Shah Rukh Khan’ which is not handled in this system)
+ 
+3.	Marilyn Monroe’s deathplace is her birthplace.  
+(Indirect true fact which the system will determine as false)
+
+4.	Ingram Micros’ foundation place is Irvine, California.  
+(Many states in USA are shortened in Wikipedia infoboxes (California as CA))
+
+5.	Anne Hathaway is the spouse of William Shakespeare.  
+(Wikipedia link for Anne Hathaway leads to the article of a more famous subject)
+
+
+
+#### Incorrect facts the system cannot handle
+1.	York is the foundation place of The New York Times.  
+(‘York’ is contained in ‘New York’ and the system will determine this as true)
+
+2.	My Name is Lucy Barton’s author is Mark Twain.  
+(The split word ‘is’ used to format the fact is also present in the subject)
+
+3.	Google’s subsidiary is Facebook.  
+(Wikipedia does not list all the subsidiaries of Microsoft in the infobox)
+
+4.	A Star Is Born (2018 film) stars Meryl Streep.  
+(Wrong classification due to catchword present in subject)
+
+5.	Pride and Prejudice is the book of Agatha Christie.  
+(Unknown category ‘book’)
+
+
+#### Team Name: 	Team Watson
+#### Team members:  
+1.	Prathisha Kunnumbrath Manden  
+2.	Syamkrishna Mooppidisseriveli Gopalakrishnan  
+                
+
