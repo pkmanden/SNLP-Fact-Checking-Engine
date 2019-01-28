@@ -22,3 +22,12 @@ If the given input FactObject matches with the object in the corpus under the pa
 Once the complete input file is parsed, the fact scores of the facts are converted into the format required and stored into the file results.ttl (or results_train.ttl in case of train file).
 
 Since with each fact more and more Wikipedia infoboxes are extracted and this information already available in the stored data structures, it is stored into a file for the use during the further run of the program.
+
+
+# Executing the Project
+Run as a simple Java project by running the Main file.
+Input file format should be as  
+FactID	Fact_Statement  
+Result file of the test.tsv file will be updated in the results.ttl file.  
+
+**Note** : Set the variable isTrainingFile in Main.java to “true” or “false” to make the system read data from “train.tsv” or “test.tsv” respectively. By default, the value is set to “false” and the system will output the results of the “test.tsv” file.
